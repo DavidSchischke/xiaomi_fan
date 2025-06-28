@@ -64,6 +64,7 @@ MODEL_FAN_P18 = "dmaker.fan.p18"  # Mi Smart Standing Fan 2 P18
 MODEL_FAN_P30 = "dmaker.fan.p30"  # Mi Smart Standing Fan 2 P30
 MODEL_FAN_P33 = "dmaker.fan.p33"  # Mi Smart Standing Fan Pro 2
 MODEL_FAN_P39 = "dmaker.fan.p39"  # Smart Tower Fan
+MODEL_FAN_P45 = "dmaker.fan.p45"  # Smart Tower Fan 2
 MODEL_FAN_LESHOW_SS4 = "leshow.fan.ss4"
 MODEL_FAN_1C = "dmaker.fan.1c"  # Pedestal Fan Fan 1C
 
@@ -91,6 +92,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                 MODEL_FAN_P30,
                 MODEL_FAN_P33,
                 MODEL_FAN_P39,
+                MODEL_FAN_P45,
                 MODEL_FAN_LESHOW_SS4,
                 MODEL_FAN_1C,
             ]
@@ -288,6 +290,14 @@ FAN_PRESET_MODES_P39 = {
     FAN_SPEED_LEVEL4: 100,
 }
 
+FAN_PRESET_MODES_P45 = {
+    SPEED_OFF: 0,
+    FAN_SPEED_LEVEL1: 1,
+    FAN_SPEED_LEVEL2: 35,
+    FAN_SPEED_LEVEL3: 70,
+    FAN_SPEED_LEVEL4: 100,
+}
+
 FAN_SPEEDS_1C = list(FAN_PRESET_MODES_1C)
 FAN_SPEEDS_1C.remove(SPEED_OFF)
 
@@ -300,6 +310,9 @@ FAN_SPEEDS_P33.remove(SPEED_OFF)
 
 FAN_SPEEDS_P39 = list(FAN_PRESET_MODES_P39)
 FAN_SPEEDS_P39.remove(SPEED_OFF)
+
+FAN_SPEEDS_P45 = list(FAN_PRESET_MODES_P45)
+FAN_SPEEDS_P45.remove(SPEED_OFF)
 
 SUCCESS = ["ok"]
 
@@ -350,6 +363,17 @@ FEATURE_FLAGS_FAN_P33 = (
 FEATURE_FLAGS_FAN_P39 = (
     FEATURE_SET_CHILD_LOCK | FEATURE_SET_OSCILLATION_ANGLE | FEATURE_SET_NATURAL_MODE
 )
+
+FEATURE_SET_BUZZER = 1
+FEATURE_SET_LED = 2
+FEATURE_SET_CHILD_LOCK = 4
+FEATURE_SET_LED_BRIGHTNESS = 8
+FEATURE_SET_OSCILLATION_ANGLE = 16
+FEATURE_SET_NATURAL_MODE = 32
+FEATURE_SET_ANION = 64
+
+
+FEATURE_FLAGS_FAN_P45 = FEATURE_SET_CHILD_LOCK
 
 SERVICE_SET_BUZZER_ON = "fan_set_buzzer_on"
 SERVICE_SET_BUZZER_OFF = "fan_set_buzzer_off"
@@ -2314,6 +2338,52 @@ class FanStatusP39(DeviceStatus):
         return self.data["swing_mode_angle"]
 
 
+class OperationModeFanP45(Enum):
+    Normal = 0
+    Nature = 1
+    Sleep = 2
+
+
+class FanStatusP45(DeviceStatus):
+    """Container for status reports for FanP45."""
+
+    # TODO
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.data = data
+
+    @property
+    def child_lock(self) -> bool:
+        return self.data["child_lock"]
+
+    @property
+    def fan_level(self) -> int:
+        return self.data["fan_level"]
+
+    @property
+    def fan_speed(self) -> int:
+        return self.data["fan_speed"]
+
+    @property
+    def mode(self) -> str:
+        return OperationModeFanP39(self.data["mode"]).name
+
+    @property
+    def power(self) -> bool:
+        return self.data["power"]
+
+    @property
+    def delay_off_countdown(self) -> int:
+        return self.data["power_off_time"]
+
+    @property
+    def oscillate(self) -> bool:
+        return self.data["swing_mode"]
+
+    @property
+    def angle(self) -> int:
+        return self.data["swing_mode_angle"]
+
+
 class FanP39(MiotDevice):
     mapping = {
         # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:fan:0000A005:dmaker-p39:1
@@ -2425,3 +2495,118 @@ class FanP39(MiotDevice):
         elif direction == FanMoveDirection.Right:
             value = 2
         return self.set_property("set_move", value)
+
+
+class FanP45(MiotDevice):
+    mapping = {
+        # https://home.miot-spec.com/spec/xiaomi.fan.p45
+        "power": {"siid": 2, "piid": 1},
+        "fan_level": {"siid": 2, "piid": 4},
+        "mode": {"siid": 2, "piid": 3},
+        "swing_mode": {"siid": 2, "piid": 6},
+        "swing_mode_angle": {"siid": 2, "piid": 7},
+        "power_off_time": {"siid": 12, "piid": 2},
+        "fan_speed": {"siid": 2, "piid": 5},
+        "child_lock": {"siid": 11, "piid": 1},
+        # TODO: Does this work?
+        "light": {"siid": 5, "piid": 1},
+        # TODO: Is now moved to AIID. Not supported in implementation?!
+        # "set_move": {"siid": , "piid": , "access": ["write"]},
+        # TODO: Missing are alarm, turn-left and -right and different natural modes
+    }
+
+    def __init__(
+        self,
+        ip: str = None,
+        token: str = None,
+        start_id: int = 0,
+        debug: int = 0,
+        lazy_discover: bool = True,
+    ) -> None:
+        super().__init__(ip, token, start_id, debug, lazy_discover, model=MODEL_FAN_P45)
+
+    def get_properties_for_mapping(self, *, max_properties=15) -> list:
+        """Retrieve raw properties based on mapping. Copied from P39"""
+        mapping = self._get_mapping()
+
+        # We send property key in "did" because it's sent back via response and we can identify the property.
+        properties = [
+            {"did": k, **_filter_request_fields(v)}
+            for k, v in mapping.items()
+            if "aiid" not in v and ("access" not in v or "read" in v["access"])
+        ]
+
+        return self.get_properties(
+            properties, property_getter="get_properties", max_properties=max_properties
+        )
+
+    def status(self):
+        return FanStatusP45(
+            {
+                prop["did"]: prop["value"] if prop["code"] == 0 else None
+                for prop in self.get_properties_for_mapping()
+            }
+        )
+
+    def on(self):
+        """Power on."""
+        return self.set_property("power", True)
+
+    def off(self):
+        """Power off."""
+        return self.set_property("power", False)
+
+    def set_speed(self, speed: int):
+        """Set fan speed."""
+        if speed < 0 or speed > 100:
+            raise FanException("Invalid speed: %s" % speed)
+
+        return self.set_property("fan_speed", speed)
+
+    def set_angle(self, angle: int):
+        """Set the oscillation angle."""
+        if angle not in [30, 60, 90, 120, 140]:
+            raise FanException(
+                "Unsupported angle. Supported values: "
+                + ", ".join("{0}".format(i) for i in [30, 60, 90, 120, 140])
+            )
+
+        return self.set_property("swing_mode_angle", angle)
+
+    def set_oscillate(self, oscillate: bool):
+        """Set oscillate on/off."""
+        if oscillate:
+            return self.set_property("swing_mode", True)
+        else:
+            return self.set_property("swing_mode", False)
+
+    def set_child_lock(self, lock: bool):
+        """Set child lock on/off."""
+        self.status()
+        return self.set_property("child_lock", lock)
+
+    def set_mode(self, mode: OperationModeFanP45):
+        """Set mode."""
+        return self.set_property("mode", OperationModeFanP45[mode.name].value)
+
+    def delay_off(self, minutes: int):
+        """Set delay off minutes."""
+
+        if minutes < 0 or minutes > 480:
+            raise FanException("Invalid value for a delayed turn off: %s" % minutes)
+
+        return self.set_property("power_off_time", minutes)
+
+    # TODO: Implement via AAID
+    # def set_rotate(self, direction: FanMoveDirection):
+    #     """Rotate fan 7.5 degrees horizontally to given direction."""
+    #     # Values for P39
+    #     # { "value": 0, "description": "None" },
+    #     # { "value": 1, "description": "Left" },
+    #     # { "value": 2, "description": "Right" }
+    #     value = 0
+    #     if direction == FanMoveDirection.Left:
+    #         value = 1
+    #     elif direction == FanMoveDirection.Right:
+    #         value = 2
+    #     return self.set_property("set_move", value)
