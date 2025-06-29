@@ -64,7 +64,7 @@ MODEL_FAN_P18 = "dmaker.fan.p18"  # Mi Smart Standing Fan 2 P18
 MODEL_FAN_P30 = "dmaker.fan.p30"  # Mi Smart Standing Fan 2 P30
 MODEL_FAN_P33 = "dmaker.fan.p33"  # Mi Smart Standing Fan Pro 2
 MODEL_FAN_P39 = "dmaker.fan.p39"  # Smart Tower Fan
-MODEL_FAN_P45 = "dmaker.fan.p45"  # Smart Tower Fan 2
+MODEL_FAN_P45 = "xiaomi.fan.p45"  # Smart Tower Fan 2
 MODEL_FAN_LESHOW_SS4 = "leshow.fan.ss4"
 MODEL_FAN_1C = "dmaker.fan.1c"  # Pedestal Fan Fan 1C
 
@@ -186,6 +186,16 @@ AVAILABLE_ATTRIBUTES_FAN_P39 = {
     ATTR_DELAY_OFF_COUNTDOWN: "delay_off_countdown",
     ATTR_CHILD_LOCK: "child_lock",
     ATTR_RAW_SPEED: "speed",
+}
+
+AVAILABLE_ATTRIBUTES_FAN_P45 = {
+    ATTR_MODE: "mode",
+    ATTR_OSCILLATE: "oscillate",
+    ATTR_ANGLE: "angle",
+    ATTR_DELAY_OFF_COUNTDOWN: "delay_off_countdown",
+    ATTR_CHILD_LOCK: "child_lock",
+    ATTR_RAW_SPEED: "speed",
+    ATTR_LED: "led",
 }
 
 AVAILABLE_ATTRIBUTES_FAN_LESHOW_SS4 = {
@@ -524,6 +534,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     elif model == MODEL_FAN_P39:
         fan = FanP39(host, token, model=model)
         device = XiaomiFanP39(
+            name, fan, model, unique_id, retries, preset_modes_override
+        )
+    elif model == MODEL_FAN_P45:
+        fan = FanP45(host, token, model=model)
+        device = XiaomiFanP45(
             name, fan, model, unique_id, retries, preset_modes_override
         )
     else:
@@ -2338,6 +2353,130 @@ class FanStatusP39(DeviceStatus):
         return self.data["swing_mode_angle"]
 
 
+class XiaomiFanP45(XiaomiFanMiot):
+    """Representation of a Xiaomi Fan P45."""
+
+    def __init__(self, name, device, model, unique_id, retries, preset_modes_override):
+        """Initialize the fan entity."""
+        super().__init__(name, device, model, unique_id, retries, preset_modes_override)
+
+        self._device_features = FEATURE_FLAGS_FAN_P45
+        self._available_attributes = AVAILABLE_ATTRIBUTES_FAN_P45
+        self._percentage = None
+        self._preset_modes = list()
+        if preset_modes_override is not None:
+            self._preset_modes = preset_modes_override
+
+        self._preset_mode = None
+        self._oscillate = None
+        self._natural_mode = False
+
+        self._state_attrs.update(
+            {attribute: None for attribute in self._available_attributes}
+        )
+
+    @property
+    def supported_features(self) -> int:
+        return (
+            # FanEntityFeature.DIRECTION
+            FanEntityFeature.OSCILLATE
+            | FanEntityFeature.PRESET_MODE
+            | FanEntityFeature.SET_SPEED
+            | FanEntityFeature.TURN_OFF
+            | FanEntityFeature.TURN_ON
+        )
+
+    async def async_update(self):
+        if self._skip_update:
+            self._skip_update = False
+            return
+
+        try:
+            tmp = self._device.status()
+            for k, v in tmp.data.items():
+                print(f"{k}: {v} {type(v)}")
+            state = await self.hass.async_add_executor_job(self._device.status)
+            _LOGGER.debug("Got new state: %s", state)
+
+            self._available = True
+            self._percentage = state.fan_speed
+            self._oscillate = state.oscillate
+            self._natural_mode = state.mode == OperationModeFanP45.Nature
+            self._state = state.power
+
+            for preset_mode, value in FAN_PRESET_MODES_P45.items():
+                if state.fan_level == value:
+                    self._preset_mode = preset_mode
+                    break
+
+            self._state_attrs.update(
+                {
+                    key: self._extract_value_from_attribute(state, value)
+                    for key, value in self._available_attributes.items()
+                    if hasattr(state, value)
+                }
+            )
+            self._retry = 0
+
+        except DeviceException as ex:
+            self._retry = self._retry + 1
+            if self._retry < self._retries:
+                _LOGGER.info(
+                    "%s Got exception while fetching the state: %s , _retry=%s",
+                    self.__class__.__name__,
+                    ex,
+                    self._retry,
+                )
+            else:
+                self._available = False
+                _LOGGER.error(
+                    "%s Got exception while fetching the state: %s , _retry=%s",
+                    self.__class__.__name__,
+                    ex,
+                    self._retry,
+                )
+
+    @property
+    def percentage(self) -> Optional[int]:
+        return self._percentage
+
+    @property
+    def speed_count(self) -> int:
+        return len(FAN_SPEEDS_P45)
+
+    @property
+    def preset_modes(self):
+        return self._preset_modes
+
+    @property
+    def preset_mode(self):
+        if self._state:
+            return self._preset_mode
+        return None
+
+    async def async_set_natural_mode_on(self):
+        """Turn the natural mode on."""
+        if self._device_features & FEATURE_SET_NATURAL_MODE == 0:
+            return
+
+        await self._try_command(
+            "Setting fan natural mode of the miio device failed.",
+            self._device.set_mode,
+            OperationModeFanP45.Nature,
+        )
+
+    async def async_set_natural_mode_off(self):
+        """Turn the natural mode off."""
+        if self._device_features & FEATURE_SET_NATURAL_MODE == 0:
+            return
+
+        await self._try_command(
+            "Setting fan natural mode of the miio device failed.",
+            self._device.set_mode,
+            OperationModeFanP45.Normal,
+        )
+
+
 class OperationModeFanP45(Enum):
     Normal = 0
     Nature = 1
@@ -2522,8 +2661,9 @@ class FanP45(MiotDevice):
         start_id: int = 0,
         debug: int = 0,
         lazy_discover: bool = True,
+        model: str = MODEL_FAN_P45,
     ) -> None:
-        super().__init__(ip, token, start_id, debug, lazy_discover, model=MODEL_FAN_P45)
+        super().__init__(ip, token, start_id, debug, lazy_discover, model)
 
     def get_properties_for_mapping(self, *, max_properties=15) -> list:
         """Retrieve raw properties based on mapping. Copied from P39"""

@@ -1,5 +1,8 @@
 {
   "domain": "xiaomi_miio_fan",
+  "loggers": [
+    "custom_components.xiaomi_miio_fan"
+  ],
   "name": "Xiaomi Mi Smart Pedestal Fan",
   "codeowners": [
     "@syssi"
