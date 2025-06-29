@@ -1,0 +1,1 @@
+from .xiaomi_generic_device import XiaomiGenericDevice

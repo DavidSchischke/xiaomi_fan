@@ -1,0 +1,28 @@
+SPEED_OFF = "off"
+
+ATTR_MODEL = "model"
+ATTR_BRIGHTNESS = "brightness"
+
+ATTR_TEMPERATURE = "temperature"
+ATTR_HUMIDITY = "humidity"
+ATTR_LED = "led"
+ATTR_LED_BRIGHTNESS = "led_brightness"
+ATTR_RAW_LED_BRIGHTNESS = "raw_led_brightness"
+ATTR_BUZZER = "buzzer"
+ATTR_CHILD_LOCK = "child_lock"
+ATTR_NATURAL_SPEED = "natural_speed"
+ATTR_OSCILLATE = "oscillate"
+ATTR_BATTERY = "battery"
+ATTR_BATTERY_CHARGE = "battery_charge"
+ATTR_BATTERY_STATE = "battery_state"
+ATTR_AC_POWER = "ac_power"
+ATTR_DELAY_OFF_COUNTDOWN = "delay_off_countdown"
+ATTR_ANGLE = "angle"
+ATTR_DIRECT_SPEED = "direct_speed"
+ATTR_USE_TIME = "use_time"
+ATTR_BUTTON_PRESSED = "button_pressed"
+ATTR_RAW_SPEED = "raw_speed"
+ATTR_IONIZER = "anion"
+
+# Fan Leshow SS4
+ATTR_ERROR_DETECTED = "error_detected"

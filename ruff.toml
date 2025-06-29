@@ -1,0 +1,7 @@
+# Sync with Flake8
+line-length = 100
+
+ignore = ["F403", "F405"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
