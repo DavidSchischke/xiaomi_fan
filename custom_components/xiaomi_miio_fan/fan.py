@@ -20,8 +20,8 @@ from homeassistant.const import (
 from homeassistant.exceptions import PlatformNotReady
 from miio import Device, DeviceException, Fan, Fan1C, FanLeshow, FanMiot, FanP5
 
-import models
-import config as cfg
+from .models import *
+from .config import *
 
 from ._base.attributes import *
 from ._base.features import *
@@ -47,26 +47,26 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
         vol.Optional(CONF_MODEL): vol.In(
             [
-                cfg.MODEL_FAN_V2,
-                cfg.MODEL_FAN_V3,
-                cfg.MODEL_FAN_SA1,
-                cfg.MODEL_FAN_ZA1,
-                cfg.MODEL_FAN_ZA3,
-                cfg.MODEL_FAN_ZA4,
-                cfg.MODEL_FAN_ZA5,
-                cfg.MODEL_FAN_P5,
-                cfg.MODEL_FAN_P8,
-                cfg.MODEL_FAN_P9,
-                cfg.MODEL_FAN_P10,
-                cfg.MODEL_FAN_P11,
-                cfg.MODEL_FAN_P15,
-                cfg.MODEL_FAN_P18,
-                cfg.MODEL_FAN_P30,
-                cfg.MODEL_FAN_P33,
-                cfg.MODEL_FAN_P39,
-                cfg.MODEL_FAN_P45,
-                cfg.MODEL_FAN_LESHOW_SS4,
-                cfg.MODEL_FAN_1C,
+                MODEL_FAN_V2,
+                MODEL_FAN_V3,
+                MODEL_FAN_SA1,
+                MODEL_FAN_ZA1,
+                MODEL_FAN_ZA3,
+                MODEL_FAN_ZA4,
+                MODEL_FAN_ZA5,
+                MODEL_FAN_P5,
+                MODEL_FAN_P8,
+                MODEL_FAN_P9,
+                MODEL_FAN_P10,
+                MODEL_FAN_P11,
+                MODEL_FAN_P15,
+                MODEL_FAN_P18,
+                MODEL_FAN_P30,
+                MODEL_FAN_P33,
+                MODEL_FAN_P39,
+                MODEL_FAN_P45,
+                MODEL_FAN_LESHOW_SS4,
+                MODEL_FAN_1C,
             ]
         ),
         vol.Optional(CONF_RETRIES, default=DEFAULT_RETRIES): cv.positive_int,
@@ -152,45 +152,45 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             raise PlatformNotReady from ex
 
     if model in [
-        cfg.MODEL_FAN_V2,
-        cfg.MODEL_FAN_V3,
-        cfg.MODEL_FAN_SA1,
-        cfg.MODEL_FAN_ZA1,
-        cfg.MODEL_FAN_ZA3,
-        cfg.MODEL_FAN_ZA4,
+        MODEL_FAN_V2,
+        MODEL_FAN_V3,
+        MODEL_FAN_SA1,
+        MODEL_FAN_ZA1,
+        MODEL_FAN_ZA3,
+        MODEL_FAN_ZA4,
     ]:
         fan = Fan(host, token, model=model)
-        device = models.XiaomiFan(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_P5:
+        device = XiaomiFan(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_P5:
         fan = FanP5(host, token, model=model)
-        device = models.XiaomiFanP5(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_P9:
+        device = XiaomiFanP5(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_P9:
         fan = FanMiot(host, token, model=model)
-        device = models.XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model in [cfg.MODEL_FAN_P10, cfg.MODEL_FAN_P18, cfg.MODEL_FAN_P30]:
-        fan = FanMiot(host, token, model=cfg.MODEL_FAN_P10)
-        device = models.XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model in [cfg.MODEL_FAN_P11, cfg.MODEL_FAN_P15]:
-        fan = FanMiot(host, token, model=cfg.MODEL_FAN_P11)
-        device = models.XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_LESHOW_SS4:
+        device = XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model in [MODEL_FAN_P10, MODEL_FAN_P18, MODEL_FAN_P30]:
+        fan = FanMiot(host, token, model=MODEL_FAN_P10)
+        device = XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model in [MODEL_FAN_P11, MODEL_FAN_P15]:
+        fan = FanMiot(host, token, model=MODEL_FAN_P11)
+        device = XiaomiFanMiot(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_LESHOW_SS4:
         fan = FanLeshow(host, token, model=model)
-        device = models.XiaomiFanLeshow(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model in [cfg.MODEL_FAN_1C, cfg.MODEL_FAN_P8]:
+        device = XiaomiFanLeshow(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model in [MODEL_FAN_1C, MODEL_FAN_P8]:
         fan = Fan1C(host, token, model=model)
-        device = models.XiaomiFan1C(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_ZA5:
-        fan = models.FanZA5(host, token, model=model)
-        device = models.XiaomiFanZA5(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_P33:
-        fan = models.FanP33(host, token, model=model)
-        device = models.XiaomiFanP33(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_P39:
-        fan = models.FanP39(host, token, model=model)
-        device = models.XiaomiFanP39(name, fan, model, unique_id, retries, preset_modes_override)
-    elif model == cfg.MODEL_FAN_P45:
-        fan = models.FanP45(host, token, model=model)
-        device = models.XiaomiFanP45(name, fan, model, unique_id, retries, preset_modes_override)
+        device = XiaomiFan1C(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_ZA5:
+        fan = FanZA5(host, token, model=model)
+        device = XiaomiFanZA5(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_P33:
+        fan = FanP33(host, token, model=model)
+        device = XiaomiFanP33(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_P39:
+        fan = FanP39(host, token, model=model)
+        device = XiaomiFanP39(name, fan, model, unique_id, retries, preset_modes_override)
+    elif model == MODEL_FAN_P45:
+        fan = FanP45(host, token, model=model)
+        device = XiaomiFanP45(name, fan, model, unique_id, retries, preset_modes_override)
     else:
         _LOGGER.error(
             "Unsupported device found! Please create an issue at "

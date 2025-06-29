@@ -1,4 +1,5 @@
 from homeassistant.const import ATTR_MODE
+from ..xiaomi_fan.config import FEATURE_FLAGS_FAN
 
 from ..._base.attributes import (
     ATTR_RAW_SPEED,
@@ -29,3 +30,5 @@ FAN_PRESET_MODES_1C = {
 
 FAN_SPEEDS_1C = list(FAN_PRESET_MODES_1C)
 FAN_SPEEDS_1C.remove(SPEED_OFF)
+
+FEATURE_FLAGS_FAN_1C = FEATURE_FLAGS_FAN

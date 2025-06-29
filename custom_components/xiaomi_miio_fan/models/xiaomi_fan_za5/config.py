@@ -1,3 +1,5 @@
+from homeassistant.const import ATTR_MODE
+
 from ..._base.attributes import *
 from ..._base.speed_level import *
 from ..._base.features import *

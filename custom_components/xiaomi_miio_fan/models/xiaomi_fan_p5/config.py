@@ -1,5 +1,5 @@
 from homeassistant.const import ATTR_MODE
-
+from ..xiaomi_fan.config import FAN_PRESET_MODES
 
 from ..._base.attributes import *
 from ..._base.speed_level import *
@@ -38,3 +38,5 @@ FAN_PRESET_MODE_VALUES_P5 = {
     FAN_SPEED_LEVEL3: 70,
     FAN_SPEED_LEVEL4: 100,
 }
+
+FAN_PRESET_MODES_P5 = FAN_PRESET_MODES

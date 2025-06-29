@@ -3,6 +3,8 @@ from homeassistant.const import ATTR_MODE
 from ..._base.attributes import *
 from ..._base.speed_level import *
 
+from ..xiaomi_fan_p39.config import FEATURE_FLAGS_FAN_P39
+
 AVAILABLE_ATTRIBUTES_FAN_P45 = {
     ATTR_MODE: "mode",
     ATTR_OSCILLATE: "oscillate",
@@ -23,3 +25,5 @@ FAN_PRESET_MODES_P45 = {
 
 FAN_SPEEDS_P45 = list(FAN_PRESET_MODES_P45)
 FAN_SPEEDS_P45.remove(SPEED_OFF)
+
+FEATURE_FLAGS_FAN_P45 = FEATURE_FLAGS_FAN_P39
